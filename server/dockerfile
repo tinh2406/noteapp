@@ -1,0 +1,31 @@
+# Sử dụng image nhỏ gọn của Python dựa trên Alpine
+FROM python:3.11-alpine as python-server
+
+# Cài đặt các dependencies cần thiết cho Python server
+RUN pip install --no-cache-dir flask googletrans==3.1.0a0 python-dotenv
+
+# Copy mã nguồn Python vào container
+COPY index.py /app/python_server.py
+
+# Chạy Python server
+CMD ["python", "/app/python_server.py"]
+
+# Stage 2: Build Node.js server
+FROM node:16-alpine as node-server
+
+# Tạo thư mục cho Node.js app
+WORKDIR /app
+
+# Copy mã nguồn và cài đặt các dependencies cho Node.js server
+COPY package.json /app/package.json
+RUN npm install --production
+
+# Copy mã nguồn Node.js vào container
+COPY index.js /app/node_server.js
+
+# Command để chạy cả hai server
+COPY --from=python-server / /
+EXPOSE 10002
+
+# Khởi động cả hai server
+CMD ["sh", "-c", "python /app/python_server.py & node /app/node_server.js"]
